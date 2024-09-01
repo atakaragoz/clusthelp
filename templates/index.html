@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLURM Job Script Generator</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --input-bg: #f4f4f4;
+            --input-border: #dddddd;
+            --script-bg: #f4f4f4;
+            --script-border: #dddddd;
+            --button-bg: #4CAF50;
+            --button-text: #ffffff;
+            --button-hover-bg: #45a049;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1e1e1e;
+                --text-color: #e0e0e0;
+                --input-bg: #2d2d2d;
+                --input-border: #444444;
+                --script-bg: #2d2d2d;
+                --script-border: #444444;
+                --button-bg: #45a049;
+                --button-text: #ffffff;
+                --button-hover-bg: #3d8b40;
+            }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .form-container {
+            flex: 1;
+        }
+        .script-container {
+            flex: 1;
+            position: relative;
+        }
+        pre {
+            background-color: var(--script-bg);
+            border: 1px solid var(--script-border);
+            border-radius: 4px;
+            padding: 10px;
+            padding-top: 40px; /* Increased top padding to accommodate the button */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 10px;
+            position: relative; /* Added to position the button relative to pre */
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            margin-bottom: 10px;
+        }
+        input, select {
+            width: 200px;
+            padding: 5px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+        button {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .copy-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .copy-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        .module-selection {
+            margin-top: 20px;
+        }
+        .module-selection h3 {
+            margin-bottom: 10px;
+        }
+        .module-selection label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        .module-selection input[type="checkbox"] {
+            margin: 0;
+            padding: 0;
+            width: auto;
+            height: auto;
+        }
+        .module-selection span {
+            margin-left: 5px;
+        }
+        .tips-container {
+            margin-top: 40px;
+            text-align: center;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tips-container h2 {
+            margin-bottom: 20px;
+        }
+
+        .tips-container ul {
+            text-align: left;
+            display: inline-block;
+        }
+
+        .tips-container li {
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>
+        function updateTimeInputs() {
+            const timeSelect = document.getElementById('time-select');
+            const timeCustom = document.getElementById('time-custom');
+            timeCustom.style.display = timeSelect.value === 'custom' ? 'inline' : 'none';
+            updateScript();
+        }
+
+        function updateScript() {
+            const jobName = document.getElementById('job-name').value;
+            const partition = document.getElementById('partition').value;
+            const nodes = document.getElementById('nodes').value;
+            const ntasks = document.getElementById('ntasks').value;
+            const cpusPerTask = document.getElementById('cpus-per-task').value;
+            const mem = document.getElementById('mem').value;
+            const timeSelect = document.getElementById('time-select');
+            const timeCustom = document.getElementById('time-custom');
+            const time = timeSelect.value === 'custom' ? timeCustom.value : timeSelect.value;
+            const output = document.getElementById('output').value;
+            const account = document.getElementById('account').value;
+            const email = document.getElementById('email').value;
+
+            const moduleLoads = getSelectedModules();
+            const script = `#!/bin/bash
+#SBATCH --job-name=${jobName}
+#SBATCH -N ${nodes}
+#SBATCH --ntasks ${ntasks}
+#SBATCH --cpus-per-task=${cpusPerTask}
+#SBATCH --mem ${mem}
+#SBATCH --time ${time}
+#SBATCH --output=${output}
+#SBATCH --account=${account}
+#SBATCH --partition=${partition}
+#SBATCH --mail-user=${email}
+#SBATCH --mail-type=ALL
+
+${moduleLoads}`;
+
+            const scriptElement = document.getElementById('slurm-script');
+            scriptElement.innerHTML = `<button class="copy-button" onclick="copyScript()">Copy</button>${script}`;
+        }
+
+        function getSelectedModules() {
+            const moduleCheckboxes = document.querySelectorAll('input[name="modules"]:checked');
+            return Array.from(moduleCheckboxes)
+                .map(checkbox => `module load ${checkbox.value}`)
+                .join('\n');
+        }
+
+        function copyScript() {
+            const scriptElement = document.getElementById('slurm-script');
+            const scriptText = scriptElement.innerText.replace('Copy', '').trim();
+            navigator.clipboard.writeText(scriptText);
+            alert('Script copied to clipboard!');
+        }
+
+        // Call updateScript() when the page loads
+        window.onload = updateScript;
+    </script>
+</head>
+<body>
+    <h1>SLURM Job Script Generator</h1>
+    <div class="container">
+        <div class="form-container">
+            <form id="slurm-form" onsubmit="event.preventDefault(); updateScript();">
+                <label for="job-name">Job Name:</label>
+                <input type="text" id="job-name" name="job-name" required onchange="updateScript()"><br>
+
+                <label for="partition">Partition:</label>
+                <select id="partition" name="partition" required onchange="updateScript()">
+                    <option value="free">free</option>
+                    <option value="free_gpu">free_gpu</option>
+                    <option value="tier1_cpu">tier1_cpu</option>
+                    <option value="tier1_gpu">tier1_gpu</option>
+                    <option value="tier2_cpu" selected>tier2_cpu</option>
+                    <option value="tier2_gpu">tier2_gpu</option>
+                    <option value="tier3_gpu">tier3_gpu</option>
+                </select><br>
+
+                <label for="nodes">Nodes:</label>
+                <input type="number" id="nodes" name="nodes" value="1" min="1" required onchange="updateScript()"><br>
+
+                <label for="ntasks">Number of tasks:</label>
+                <input type="number" id="ntasks" name="ntasks" value="1" min="1" required onchange="updateScript()"><br>
+
+                <label for="cpus-per-task">CPUs per task:</label>
+                <input type="number" id="cpus-per-task" name="cpus-per-task" value="1" min="1" required onchange="updateScript()"><br>
+
+                <label for="mem">Memory:</label>
+                <input type="text" id="mem" name="mem" value="10G" required onchange="updateScript()"><br>
+
+                <label for="time-select">Time limit:</label>
+                <select id="time-select" name="time-select" onchange="updateTimeInputs()">
+                    <option value="00:05:00">5 minutes</option>
+                    <option value="00:30:00">30 minutes</option>
+                    <option value="01:00:00">1 hour</option>
+                    <option value="03:00:00">3 hours</option>
+                    <option value="24:00:00">24 hours</option>
+                    <option value="168:00:00">7 days</option>
+                    <option value="336:00:00">14 days</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <input type="text" id="time-custom" name="time-custom" placeholder="HH:MM:SS" style="display: none;" onchange="updateScript()"><br>
+
+                <label for="output">Output file:</label>
+                <input type="text" id="output" name="output" value="/home/user/output_%x_%j.out" required onchange="updateScript()"><br>
+
+                <label for="account">Account:</label>
+                <input type="text" id="account" name="account" value="" onchange="updateScript()"><br>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required onchange="updateScript()"><br>
+
+                <div class="module-selection">
+                    <h3>Select Modules to Load:</h3>
+                    <label>
+                        <input type="checkbox" name="modules" value="freesurfer" onchange="updateScript()"> 
+                        <span>freesurfer</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="modules" value="fsl" onchange="updateScript()"> 
+                        <span>fsl</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="modules" value="ants" onchange="updateScript()"> 
+                        <span>ants</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="modules" value="afni" onchange="updateScript()"> 
+                        <span>afni</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="modules" value="singularity" onchange="updateScript()"> 
+                        <span>singularity</span>
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="script-container">
+            <h2>Generated SLURM Script</h2>
+            
+            <pre id="slurm-script">
+                <button class="copy-button" onclick="copyScript()">Copy</button>
+                <!-- Script content will be inserted here by JavaScript -->
+            </pre>
+        </div>
+    </div>
+    
+    <div class="tips-container">
+        <h2>Helpful Tips for Launching Jobs on CHPC</h2>
+        <ul>
+            <li>Request walltime that's slightly longer than the estimated job runtime for optimal scheduling.</li>
+            <li>Use --exclusive only when your job can fully utilize all CPUs or memory on allocated nodes.</li>
+            <li>For parallel jobs, use --ntasks-per-node for MPI jobs and --cpus-per-task for multi-threaded jobs.</li>
+            <li>Specify nodes with --nodes (or -N) or combine --ntasks with --cpus-per-task for flexible allocation.</li>
+            <li>Request memory with --mem for total per node or --mem-per-cpu for amount per CPU (not both).</li>
+            <li>Default memory is 6 GB per node if unspecified; max CPU memory is 384 GB or 768 GB per node.</li>
+        </ul>
+    </div>
+</body>
+</html>

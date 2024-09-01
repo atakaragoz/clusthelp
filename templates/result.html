@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated SLURM Script</title>
+    <script>
+        function copyScript() {
+            const scriptElement = document.getElementById('slurm-script');
+            navigator.clipboard.writeText(scriptElement.textContent);
+            alert('Script copied to clipboard!');
+        }
+    </script>
+</head>
+<body>
+    <h1>Generated SLURM Script</h1>
+    <pre id="slurm-script">{{ slurm_script }}</pre>
+    <button onclick="copyScript()">Copy Script</button>
+    <br>
+    <a href="/">Generate Another Script</a>
+</body>
+</html>
